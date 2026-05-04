@@ -1,59 +1,85 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Appointment System — API & Web
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A Laravel-based dental / healthcare appointment app. After signing up and logging in, users pick a service and a doctor, then book from available time slots. They can list their appointments and cancel upcoming ones. The project includes a small **REST API** (public service list and Sanctum-protected user info) alongside a **Blade** UI.
 
-## About Laravel
+## Features
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Authentication:** Register, login, logout (session)
+- **Booking:** Service and doctor selection, fixed time slots (09:00–16:00), date format `d.m.Y`
+- **Conflict prevention:** No overlapping bookings for the same doctor; MySQL `GET_LOCK` serializes concurrent requests
+- **Service duration:** End time is derived from the selected service duration
+- **My appointments:** Lists the user’s bookings with service and doctor details; future appointments can be cancelled
+- **API:** `GET /api/services` (public), `GET /api/user` (requires Laravel Sanctum authentication)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Tech stack
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- PHP **8.2+**
+- **Laravel 12**
+- **Laravel Sanctum** (API token / SPA auth)
+- Database: intended for **MySQL** (e.g. `GET_LOCK`)
 
-## Learning Laravel
+## Setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+git clone https://github.com/melihcelikel1/randevu-sistemi-api.git
+cd randevu-sistemi-api
+composer install
+cp .env.example .env
+php artisan key:generate
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Configure your database in `.env`, then:
 
-## Laravel Sponsors
+```bash
+php artisan migrate
+php artisan db:seed   # sample services & doctors (ServiceSeeder, DoctorSeeder)
+php artisan serve
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Frontend assets for local development:
 
-### Premium Partners
+```bash
+npm install
+npm run dev
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+You can also run `composer run setup` for a one-shot install (verify `.env` and DB settings for your environment).
 
-## Contributing
+## Web routes (summary)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Home |
+| GET/POST | `/giris`, `/kayit-ol` | Login & register (guest) |
+| POST | `/cikis` | Logout (authenticated) |
+| GET | `/randevu-al` | Booking form |
+| GET | `/randevu-musaitlik` | Busy slots for doctor + date (JSON) |
+| POST | `/randevu-al` | Create appointment |
+| GET | `/randevularim` | User’s appointments |
+| POST | `/randevularim/{appointment}/iptal` | Cancel appointment |
 
-## Code of Conduct
+## API routes (summary)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/services` | Service list |
+| GET | `/api/user` | Authenticated user (`auth:sanctum`) |
 
-## Security Vulnerabilities
+The API is served under `APP_URL/api` by default. See the [Laravel Sanctum docs](https://laravel.com/docs/sanctum) for token usage.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Project layout (summary)
+
+- `app/Http/Controllers/` — `AuthController`, `AppointmentController`, `ServiceController`
+- `app/Models/` — `User`, `Appointment`, `Service`, `Doctor`
+- `database/migrations/` — users, services, doctors, appointments, Sanctum tokens
+- `resources/views/` — Blade templates (layouts, auth, booking pages)
+- `routes/web.php` — web UI
+- `routes/api.php` — API endpoints
+
+## Security
+
+Never commit `.env` to the repository. In production, set `APP_DEBUG=false` and restrict database access with strong credentials.
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project may be distributed under the **MIT** License, consistent with the Laravel ecosystem; the Laravel framework is [MIT licensed](https://opensource.org/licenses/MIT).
